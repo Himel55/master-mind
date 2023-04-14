@@ -19,14 +19,12 @@ typedef enum {
 } game_logic_values_t;
 
 typedef struct {
-  uint8_t number_of_correct_values_only;
+  uint8_t number_of_correct_value_only;
   uint8_t number_of_correct_value_and_placement;
   bool is_guess_correct;
 } game_logic_feedback_t;
 
 void game_logic_generate_random_answer(void);
-
-const game_logic_values_t *game_logic_get_answer(void);
 
 game_logic_feedback_t game_logic_get_feedback(game_logic_values_t *guess);
 
