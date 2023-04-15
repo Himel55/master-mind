@@ -6,6 +6,7 @@
         "cstdio": "c",
         "string_view": "c",
         "functional": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "sdl.h": "c"
     }
 }

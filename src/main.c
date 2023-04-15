@@ -1,6 +1,6 @@
 #include "console_app.h"
+#include "gui_app.h"
 #include <string.h>
-#include <stdio.h>
 
 #define STRING_EQUAL 0
 
@@ -12,5 +12,5 @@ int main(int argc, char *argv[]) {
     return console_main();
   }
 
-  puts("2D graphics game still to come");
+  return gui_main();
 }
