@@ -26,6 +26,6 @@ typedef struct {
 
 void game_logic_generate_random_answer(void);
 
-game_logic_feedback_t game_logic_get_feedback(game_logic_values_t *guess);
+game_logic_feedback_t game_logic_get_feedback(game_logic_values_t guess[]);
 
 #endif /* GAME_LOGIC_H */

@@ -17,7 +17,7 @@ void game_logic_generate_random_answer(void) {
   }
 }
 
-game_logic_feedback_t game_logic_get_feedback(game_logic_values_t *guess) {
+game_logic_feedback_t game_logic_get_feedback(game_logic_values_t guess[]) {
   game_logic_feedback_t feedback = {0};
   uint_fast8_t guess_bins[GAME_VALUE_MAX] = {0};
 
