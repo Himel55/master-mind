@@ -13,7 +13,7 @@ int random_value(void) {
   return mock_random_return[mock_random_return_index++];
 }
 
-void mock_random_set_values_to_match(const game_logic_values_t *set_answer) {
+static void mock_random_set_values_to_match(const game_logic_values_t *set_answer) {
   mock_random_return_index = 0;
   // make it a bit more complicated then just 0-5, but it will still generate the same value each time
   for (size_t i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
