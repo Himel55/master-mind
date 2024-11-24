@@ -7,7 +7,7 @@ SRC_FILES = $(wildcard $(SRC_DIR)/*.c)
 
 CC = gcc
 CFLAGS = -Wall -Wextra -Werror -ggdb -std=c99
-LDFLAGS=-lSDL2
+LDFLAGS=-lSDL2 -lSDL2_ttf
 TARGET_GAME = game
 TARGET_TEST = tests
 
