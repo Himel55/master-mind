@@ -9,13 +9,6 @@
 #include <SDL2/SDL_ttf.h>
 #include "game_logic.h"
 
-// TODO: Only allow submit if all entries at not NONE
-//       active_idx limited to 10
-
-// Screen dimension constants
-const int SCREEN_WIDTH = 1600;
-const int SCREEN_HEIGHT = 900;
-
 #define SDL_COLOUR(colour) (((colour) >> 3 * 8) & 0xFF), (((colour) >> 2 * 8) & 0xFF), (((colour) >> 1 * 8) & 0xFF), (((colour) >> 0 * 8) & 0xFF)
 #define BACKGROUND_COLOUR 0x1E1E1EFF
 #define FOREGROUND_COLOUR 0x8E8E8EFF
@@ -40,6 +33,9 @@ typedef enum {
   PINK,
   COLOUR_COUNT
 } colour_label_t;
+
+static const int SCREEN_WIDTH = 900;
+static const int SCREEN_HEIGHT = 900;
 
 static const int colour_choices[] = {
   [NONE] =   BACKGROUND_COLOUR,
@@ -73,7 +69,6 @@ typedef struct {
 } guess_set_t;
 
 static guess_set_t guess_sets[MAXIMUM_NUMBER_OF_TRIES];
-
 static int active_idx = 0;
 
 static void init_circles(void) {
@@ -136,7 +131,6 @@ static circle_t* check_mouse_click(int x, int y) {
       }
     }
   }
-
   return NULL;
 }
 
@@ -185,69 +179,116 @@ int gui_main(void) {
     return EXIT_FAILURE;
   }
 
-  int text_x = guess_sets[active_idx].result[1].x + SMALL_CIRCLE_DIAMETER + 4 * PADDING;
-  SDL_Rect submit_text_dest = {text_x, (guess_sets[active_idx].result[0].y - SMALL_PADDING), submit_text_surface->w, submit_text_surface->h};
+  SDL_Surface *win_text_surface = TTF_RenderText_Solid( font, "You Win!", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
+  if (win_text_surface == NULL) {
+    fprintf(stderr, "TTF failed to render text! TFF_Error: %s\n", SDL_GetError());
+    return EXIT_FAILURE;
+  }
+  
+  SDL_Texture *win_text_texture = SDL_CreateTextureFromSurface(renderer, win_text_surface);
+  if (win_text_texture == NULL) {
+    fprintf(stderr, "failed to create text texture from surface! SDL_Error: %s\n", SDL_GetError());
+    return EXIT_FAILURE;
+  }
 
-  // Hack to get window to stay up
+  SDL_Surface *lose_text_surface = TTF_RenderText_Solid( font, "You Lose!", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
+  if (lose_text_surface == NULL) {
+    fprintf(stderr, "TTF failed to render text! TFF_Error: %s\n", SDL_GetError());
+    return EXIT_FAILURE;
+  }
+  
+  SDL_Texture *lose_text_texture = SDL_CreateTextureFromSurface(renderer, lose_text_surface);
+  if (lose_text_texture == NULL) {
+    fprintf(stderr, "failed to create text texture from surface! SDL_Error: %s\n", SDL_GetError());
+    return EXIT_FAILURE;
+  }
+
+  SDL_Texture *active_text_texture = submit_text_texture;
+  int text_x = guess_sets[active_idx].result[1].x + SMALL_CIRCLE_DIAMETER + 4 * PADDING;
+  SDL_Rect text_dest = {text_x, (guess_sets[active_idx].result[0].y - SMALL_PADDING), submit_text_surface->w, submit_text_surface->h};
+
   SDL_Event e;
+  bool game_active = true;
+  bool redraw = true;
   bool quit = false;
   while (quit == false) {
-    while (SDL_PollEvent(&e)) {
+    if (redraw) {
+      if (SDL_SetRenderDrawColor(renderer, SDL_COLOUR(BACKGROUND_COLOUR)) < 0) {
+        fprintf(stderr, "Render draw colour error! SDL_Error: %s\n", SDL_GetError());
+      }
+
+      if (SDL_RenderClear(renderer) < 0) {
+        fprintf(stderr, "Render clear error! SDL_Error: %s\n", SDL_GetError());
+      }
+
+      for (int j = 0; j < MAXIMUM_NUMBER_OF_TRIES; j++) {
+        for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
+          circle_t *circle = &guess_sets[j].guess[i];
+          draw_circle(renderer, circle);
+          circle = &guess_sets[j].result[i];
+          draw_circle(renderer, circle);
+        }
+      }
+
+      SDL_RenderCopy(renderer, active_text_texture, NULL, &text_dest);
+
+      SDL_RenderPresent(renderer);
+      redraw = false;
+    }
+
+    if (SDL_WaitEvent(&e)) {
       switch (e.type) {
       case SDL_QUIT:
         quit = true;
         break;
       case SDL_MOUSEBUTTONUP:
-        if (e.button.button == SDL_BUTTON_LEFT) {
-          circle_t *circle = check_mouse_click(e.button.x, e.button.y);
-          if (circle != NULL) {
-            circle->colour = ((int)circle->colour + 1) % COLOUR_COUNT;
-          }
-          if (SDL_PointInRect(&(SDL_Point) {e.button.x, e.button.y}, &submit_text_dest)) {
-            for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
-              game_buffer[i] = conversion_table[guess_sets[active_idx].guess[i].colour];
+        if (game_active) {
+          if (e.button.button == SDL_BUTTON_LEFT) {
+            circle_t *circle = check_mouse_click(e.button.x, e.button.y);
+            if (circle != NULL) {
+              redraw = true;
+              circle->colour = ((int)circle->colour + 1) % COLOUR_COUNT;
             }
-            feedback = game_logic_get_feedback(game_buffer);
-            for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
-              if (feedback.number_of_correct_value_and_placement > 0) {
-                feedback.number_of_correct_value_and_placement--;
-                guess_sets[active_idx].result[i].colour = GREEN;
-              } else if (feedback.number_of_correct_value_only > 0) {
-                feedback.number_of_correct_value_only--;
-                guess_sets[active_idx].result[i].colour = ORANGE;
+            if (SDL_PointInRect(&(SDL_Point) {e.button.x, e.button.y}, &text_dest)) {
+              bool is_selection_valid = true;
+              for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
+                if (guess_sets[active_idx].guess[i].colour == NONE) is_selection_valid = false;
+              }
+              if (!is_selection_valid) break;
+              redraw = true;
+              for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
+                game_buffer[i] = conversion_table[guess_sets[active_idx].guess[i].colour];
+              }
+              feedback = game_logic_get_feedback(game_buffer);
+              for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
+                if (feedback.number_of_correct_value_and_placement > 0) {
+                  feedback.number_of_correct_value_and_placement--;
+                  guess_sets[active_idx].result[i].colour = GREEN;
+                } else if (feedback.number_of_correct_value_only > 0) {
+                  feedback.number_of_correct_value_only--;
+                  guess_sets[active_idx].result[i].colour = ORANGE;
+                } else {
+                  guess_sets[active_idx].result[i].colour = RED;
+                }
+              }
+              if (feedback.is_guess_correct) { 
+                active_text_texture = win_text_texture;
+                game_active = false;
+              } else if (active_idx + 1 == MAXIMUM_NUMBER_OF_TRIES) {
+                active_text_texture = lose_text_texture;
+                game_active = false;
               } else {
-                guess_sets[active_idx].result[i].colour = RED;
+                active_idx++;
+                text_dest.y = guess_sets[active_idx].result[0].y - SMALL_PADDING;
               }
             }
-            active_idx++;
-            submit_text_dest.y = guess_sets[active_idx].result[0].y - SMALL_PADDING;
           }
         }
+        break;
       default:
         break;
       } 
     }
-
-    if (SDL_SetRenderDrawColor(renderer, SDL_COLOUR(BACKGROUND_COLOUR)) < 0) {
-      fprintf(stderr, "Render draw colour error! SDL_Error: %s\n", SDL_GetError());
-    }
-
-    if (SDL_RenderClear(renderer) < 0) {
-      fprintf(stderr, "Render clear error! SDL_Error: %s\n", SDL_GetError());
-    }
-
-    for (int j = 0; j < MAXIMUM_NUMBER_OF_TRIES; j++) {
-      for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
-        circle_t *circle = &guess_sets[j].guess[i];
-        draw_circle(renderer, circle);
-        circle = &guess_sets[j].result[i];
-        draw_circle(renderer, circle);
-      }
-    }
-
-    SDL_RenderCopy(renderer, submit_text_texture, NULL, &submit_text_dest);
-
-    SDL_RenderPresent(renderer);
   }
 
   SDL_DestroyRenderer(renderer);
