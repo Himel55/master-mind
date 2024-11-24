@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include "game_logic.h"
@@ -33,7 +34,6 @@ typedef enum {
   NONE = 0,
   RED,
   ORANGE,
-  YELLOW,
   GREEN,
   BLUE,
   PURPLE,
@@ -42,15 +42,24 @@ typedef enum {
 } colour_label_t;
 
 static const int colour_choices[] = {
-  [NONE] = BACKGROUND_COLOUR,
+  [NONE] =   BACKGROUND_COLOUR,
   [RED] =    0xFFADADFF,
   [ORANGE] = 0xFFD6A5FF,
-  [YELLOW] = 0xFDFFB6FF,
   [GREEN] =  0xCAFFBFFF,
   [BLUE] =   0xA0C4FFFF,
   [PURPLE] = 0xBDB2FFFF,
   [PINK] =   0xFFC6FFFF,
 };
+
+static const game_logic_values_t conversion_table[] = {
+  [RED] =     GAME_VALUE_ONE,
+  [ORANGE] =  GAME_VALUE_TWO,
+  [GREEN] =   GAME_VALUE_THREE,
+  [BLUE] =    GAME_VALUE_FOUR,
+  [PURPLE] =  GAME_VALUE_FIVE,
+  [PINK] =    GAME_VALUE_SIX
+};
+
 typedef struct {
   int x;
   int y;
@@ -132,6 +141,11 @@ static circle_t* check_mouse_click(int x, int y) {
 }
 
 int gui_main(void) {
+  srand(time(NULL));
+  game_logic_generate_random_answer();
+  game_logic_feedback_t feedback = {0};
+  game_logic_values_t game_buffer[NUMBER_OF_VALUES_TO_GUESS] = {0};
+
   init_circles();
 
   SDL_Window *window = NULL;
@@ -190,6 +204,21 @@ int gui_main(void) {
             circle->colour = ((int)circle->colour + 1) % COLOUR_COUNT;
           }
           if (SDL_PointInRect(&(SDL_Point) {e.button.x, e.button.y}, &submit_text_dest)) {
+            for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
+              game_buffer[i] = conversion_table[guess_sets[active_idx].guess[i].colour];
+            }
+            feedback = game_logic_get_feedback(game_buffer);
+            for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
+              if (feedback.number_of_correct_value_and_placement > 0) {
+                feedback.number_of_correct_value_and_placement--;
+                guess_sets[active_idx].result[i].colour = GREEN;
+              } else if (feedback.number_of_correct_value_only > 0) {
+                feedback.number_of_correct_value_only--;
+                guess_sets[active_idx].result[i].colour = ORANGE;
+              } else {
+                guess_sets[active_idx].result[i].colour = RED;
+              }
+            }
             active_idx++;
             submit_text_dest.y = guess_sets[active_idx].result[0].y - SMALL_PADDING;
           }
