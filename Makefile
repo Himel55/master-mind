@@ -19,6 +19,6 @@ all: test game
 test:
 	$(CC) $(CFLAGS) -I $(INC_DIR) -I $(UNITY_SRC_DIR) $(TEST_DIR)/test_game_logic.c $(SRC_DIR)/game_logic.c $(UNITY_SRC_DIR)/unity.c -o $(BUILD_DIR)/$(TARGET_TEST)
 game:
-	$(CC) $(CFLAGS) -I $(INC_DIR) $(LDFLAGS) $(SRC_FILES) -o $(BUILD_DIR)/$(TARGET_GAME)
+	$(CC) $(CFLAGS) -I $(INC_DIR) $(SRC_FILES) $(LDFLAGS) -o $(BUILD_DIR)/$(TARGET_GAME)
 clean:
 	rm -rf $(BUILD_DIR)/*
