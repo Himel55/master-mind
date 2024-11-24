@@ -33,6 +33,6 @@ game_logic_feedback_t game_logic_get_feedback(game_logic_values_t guess[]) {
   }
 
   feedback.number_of_correct_value_only -= feedback.number_of_correct_value_and_placement;
-  feedback.is_guess_correct = feedback.number_of_correct_value_and_placement == NUMBER_OF_VALUES_TO_GUESS ? true : false;
+  feedback.is_guess_correct = (bool)(feedback.number_of_correct_value_and_placement == NUMBER_OF_VALUES_TO_GUESS);
   return feedback;
 }

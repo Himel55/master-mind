@@ -4,7 +4,7 @@
 
 #define STRING_EQUAL 0
 
-static const char* console_game_argument = "--console";
+static const char console_game_argument[] = "--console";
 
 int main(int argc, char *argv[]) {
   if (argc == 2 && 

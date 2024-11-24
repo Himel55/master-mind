@@ -26,6 +26,9 @@ void setUp(void) {
   game_logic_generate_random_answer();
 }
 
+void tearDown(void) {}
+
+
 void test_pass_in_user_guess_which_is_correct(void) {
   game_logic_values_t guess[] = {GAME_VALUE_ONE, GAME_VALUE_ONE, GAME_VALUE_ONE, GAME_VALUE_ONE};
 
@@ -168,4 +171,23 @@ void test_get_feedback_all_correct(void) {
   TEST_ASSERT_EQUAL_UINT8(0, feedback.number_of_correct_value_only);
   TEST_ASSERT_EQUAL_UINT8(4, feedback.number_of_correct_value_and_placement);
   TEST_ASSERT_TRUE(feedback.is_guess_correct);
+}
+
+int main(void)
+{
+  UNITY_BEGIN();
+    RUN_TEST(test_pass_in_user_guess_which_is_correct);
+    RUN_TEST(test_pass_in_user_guess_which_is_incorrect);
+    RUN_TEST(test_get_feedback_for_one_correct_placement_and_value);
+    RUN_TEST(test_get_feedback_for_two_correct_placement_and_value);
+    RUN_TEST(test_get_feedback_for_one_correct_value_only);
+    RUN_TEST(test_get_feedback_for_two_correct_value_only);
+    RUN_TEST(test_get_feedback_for_one_correct_value_only_but_guess_contains_same_value_twice);
+    RUN_TEST(test_get_feedback_for_one_correct_value_only_and_one_correct_placement_and_value);
+    RUN_TEST(test_get_feedback_all_correct_value_only);
+    RUN_TEST(test_get_feedback_for_two_correct_value_only_and_two_correct_placement_and_value);
+    RUN_TEST(test_get_feedback_for_two_correct_value_only_and_two_correct_placement_and_value_repeated_answer);
+    RUN_TEST(test_get_feedback_all_incorrect);
+    RUN_TEST(test_get_feedback_all_correct);
+  return UNITY_END();
 }

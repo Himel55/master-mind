@@ -7,17 +7,17 @@ Currently, this game is a command line application but the intention is to make 
 ## How to build?
 
 ```sh
-$ ceedling release
+$ make all
 ```
 
 ## How to run application?
 
 ```sh
-$ ./build/release/MyApp.out --console
+$ ./build/game --console
 ```
 
 ## How to run unit tests?
 
 ```sh
-$ ceedling
+$ ./build/tests
 ```

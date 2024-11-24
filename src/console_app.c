@@ -30,7 +30,7 @@ static void convert_string_input_to_game_input(const char *char_buffer, game_log
   }
 }
 
-static void print_game_buffer(const game_logic_values_t *game_buffer) {
+void print_game_buffer(const game_logic_values_t *game_buffer) {
   for (uint_fast8_t i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
     printf("%d ", game_buffer[i]+1);
   }
@@ -47,8 +47,7 @@ int console_main(void) {
   printf("Enter 4 values ranging from A-F?\n");
   printf("NOTE: The value can contain duplicates E.g. AAFB\n");
   printf("For ever correct value a - will appear\n");
-  printf("For ever correct value and correct placement in the order a + will appear\n");
-  printf("\n\n");
+  printf("For ever correct value and correct placement in the order a + will appear\n\n");
   
   while (!feedback.is_guess_correct) {
     if (tries == MAXIMUM_NUMBER_OF_TRIES) {
