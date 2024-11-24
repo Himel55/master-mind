@@ -2,7 +2,8 @@
 
 This is a demo repository trying out test driven development by implementing the game master mind.
 
-Currently, this game is a command line application but the intention is to make a GUI version as well, using the same game logic.
+There are 2 versions of the game, one text based and one gui based. Both use the same game logic engine
+and thus have the same game mechanics
 
 ## Dependencies
 
