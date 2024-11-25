@@ -21,16 +21,16 @@
 #define SMALL_CIRCLE_THICKNESS 2
 #define PADDING 20
 #define SMALL_PADDING 5
-#define MAXIMUM_NUMBER_OF_TRIES 10
+#define MAXIMUM_NUMBER_OF_TRIES 8
 
 typedef enum {
-  NONE = 0,
-  RED,
+  RED = 0,
   ORANGE,
   GREEN,
   BLUE,
   PURPLE,
   PINK,
+  NONE,
   COLOUR_COUNT
 } colour_label_t;
 
@@ -45,15 +45,6 @@ static const int colour_choices[] = {
   [BLUE] =   0xA0C4FFFF,
   [PURPLE] = 0xBDB2FFFF,
   [PINK] =   0xFFC6FFFF,
-};
-
-static const game_logic_values_t conversion_table[] = {
-  [RED] =     GAME_VALUE_ONE,
-  [ORANGE] =  GAME_VALUE_TWO,
-  [GREEN] =   GAME_VALUE_THREE,
-  [BLUE] =    GAME_VALUE_FOUR,
-  [PURPLE] =  GAME_VALUE_FIVE,
-  [PINK] =    GAME_VALUE_SIX
 };
 
 typedef struct {
@@ -179,7 +170,7 @@ int gui_main(void) {
     return EXIT_FAILURE;
   }
 
-  SDL_Surface *win_text_surface = TTF_RenderText_Solid( font, "You Win!", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
+  SDL_Surface *win_text_surface = TTF_RenderText_Solid(font, "You Win!", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
   if (win_text_surface == NULL) {
     fprintf(stderr, "TTF failed to render text! TFF_Error: %s\n", SDL_GetError());
     return EXIT_FAILURE;
@@ -191,7 +182,7 @@ int gui_main(void) {
     return EXIT_FAILURE;
   }
 
-  SDL_Surface *lose_text_surface = TTF_RenderText_Solid( font, "You Lose!", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
+  SDL_Surface *lose_text_surface = TTF_RenderText_Solid(font, "You Lose!", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
   if (lose_text_surface == NULL) {
     fprintf(stderr, "TTF failed to render text! TFF_Error: %s\n", SDL_GetError());
     return EXIT_FAILURE;
@@ -211,6 +202,7 @@ int gui_main(void) {
   bool game_active = true;
   bool redraw = true;
   bool quit = false;
+  bool draw_answer = false;
   while (quit == false) {
     if (redraw) {
       if (SDL_SetRenderDrawColor(renderer, SDL_COLOUR(BACKGROUND_COLOUR)) < 0) {
@@ -227,6 +219,18 @@ int gui_main(void) {
           draw_circle(renderer, circle);
           circle = &guess_sets[j].result[i];
           draw_circle(renderer, circle);
+        }
+      }
+
+      if (draw_answer) {
+        for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
+          circle_t circle = {
+            .colour = (colour_label_t) game_logic_get_answer()[i],
+            .islarge = true,
+            .x = guess_sets[MAXIMUM_NUMBER_OF_TRIES - 1].guess[i].x,
+            .y = guess_sets[MAXIMUM_NUMBER_OF_TRIES - 1].guess[i].y + LARGE_CIRCLE_DIAMETER + PADDING
+          };
+          draw_circle(renderer, &circle);
         }
       }
 
@@ -257,7 +261,7 @@ int gui_main(void) {
               if (!is_selection_valid) break;
               redraw = true;
               for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
-                game_buffer[i] = conversion_table[guess_sets[active_idx].guess[i].colour];
+                game_buffer[i] = (game_logic_values_t) guess_sets[active_idx].guess[i].colour;
               }
               feedback = game_logic_get_feedback(game_buffer);
               for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
@@ -277,6 +281,7 @@ int gui_main(void) {
               } else if (active_idx + 1 == MAXIMUM_NUMBER_OF_TRIES) {
                 active_text_texture = lose_text_texture;
                 game_active = false;
+                draw_answer = true;
               } else {
                 active_idx++;
                 text_dest.y = guess_sets[active_idx].result[0].y - SMALL_PADDING;

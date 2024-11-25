@@ -5,7 +5,7 @@
 #include <time.h>
 #include "game_logic.h"
 
-#define MAXIMUM_NUMBER_OF_TRIES 12
+#define MAXIMUM_NUMBER_OF_TRIES 8
 
 static const struct {
   char character;
@@ -30,13 +30,6 @@ static void convert_string_input_to_game_input(const char *char_buffer, game_log
   }
 }
 
-void print_game_buffer(const game_logic_values_t *game_buffer) {
-  for (uint_fast8_t i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
-    printf("%d ", game_buffer[i]+1);
-  }
-  printf("\n");
-}
-
 int console_main(void) {
   srand(time(NULL));
   game_logic_generate_random_answer();
@@ -51,18 +44,21 @@ int console_main(void) {
   
   while (!feedback.is_guess_correct) {
     if (tries == MAXIMUM_NUMBER_OF_TRIES) {
-      printf("Oh No! You Failed To Guess The Correct Answer In 12 Goes!\n");
+      printf("Oh No! You Failed To Guess The Correct Answer In 8 Goes!\n");
+      game_logic_values_t* ans = game_logic_get_answer();
+      printf("The correct answer is: %c%c%c%c\n", conversion_table[ans[0]].character,
+        conversion_table[ans[1]].character, conversion_table[ans[2]].character, conversion_table[ans[3]].character);
       printf("Still Have A Nice Day!\n");
       return EXIT_SUCCESS;
     }
 
+    printf("> ");
     char char_buffer[NUMBER_OF_VALUES_TO_GUESS + 2];  // +2 for null terminator and newline
     fgets(char_buffer, sizeof(char_buffer), stdin);
     tries++;
 
     game_logic_values_t game_buffer[NUMBER_OF_VALUES_TO_GUESS];
     convert_string_input_to_game_input(char_buffer, game_buffer);
-    // print_game_buffer(game_buffer);
 
     feedback = game_logic_get_feedback(game_buffer);
     for (uint_fast8_t i = 0; i < feedback.number_of_correct_value_only; i++) {
