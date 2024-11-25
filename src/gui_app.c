@@ -62,6 +62,13 @@ typedef struct {
 static guess_set_t guess_sets[MAXIMUM_NUMBER_OF_TRIES];
 static int active_idx = 0;
 
+static void error_check(bool status, const char *error_str) {
+  if (status) {
+    fprintf(stderr, "%s SDL_Error: %s\n", error_str, SDL_GetError());
+    exit(EXIT_FAILURE);
+  }
+}
+
 static void init_circles(void) {
   int circles_offset_width = SCREEN_WIDTH / 2 - (NUMBER_OF_VALUES_TO_GUESS * (LARGE_CIRCLE_DIAMETER + PADDING) + 2 * (SMALL_CIRCLE_DIAMETER + SMALL_PADDING) + PADDING) / 2;
   int circles_offset_height = SCREEN_HEIGHT / 2 - (MAXIMUM_NUMBER_OF_TRIES * (LARGE_CIRCLE_DIAMETER + PADDING) - PADDING) / 2;
@@ -100,11 +107,11 @@ static void draw_circle(SDL_Renderer *renderer, circle_t *circle) {
       int dx = w - radius;
       if (dx*dx + dy*dy < radius*radius) {
           if (dx*dx + dy*dy >= (radius - thickness)*(radius - thickness)) {
-            SDL_SetRenderDrawColor(renderer, SDL_COLOUR(FOREGROUND_COLOUR));
+            error_check(SDL_SetRenderDrawColor(renderer, SDL_COLOUR(FOREGROUND_COLOUR)) < 0, "Render draw colour error!");
           } else {
-            SDL_SetRenderDrawColor(renderer, SDL_COLOUR(colour));
+            error_check(SDL_SetRenderDrawColor(renderer, SDL_COLOUR(colour)) < 0, "Render draw colour error!");
           }
-          SDL_RenderDrawPoint(renderer, x_center + dx, y_center + dy);
+          error_check(SDL_RenderDrawPoint(renderer, x_center + dx, y_center + dy) < 0, "Render draw point error!");
       }
     }
   }
@@ -137,62 +144,27 @@ int gui_main(void) {
   SDL_Renderer *renderer = NULL;
   TTF_Font *font = NULL;
 
-  if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-    fprintf(stderr, "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
-
-  if (TTF_Init() < 0) {
-    fprintf(stderr, "TTF could not initialize! TFF_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
-
-  if (SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer) < 0) {
-    fprintf(stderr, "window could not be created! SDL_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
-
+  error_check(SDL_Init(SDL_INIT_VIDEO) < 0, "SDL could not initialize!");
+  error_check(TTF_Init() < 0, "TTF could not initialize!");
+  error_check(SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN, &window, &renderer) < 0, "window could not be created!");
+  
   font = TTF_OpenFont("./Roboto-Medium.ttf", 36);
-  if (font == NULL) {
-    fprintf(stderr, "TTF failed to load font! TFF_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
+  error_check(font == NULL, "TTF failed to load font!");
 
   SDL_Surface *submit_text_surface = TTF_RenderText_Solid( font, "Submit", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
-  if (submit_text_surface == NULL) {
-    fprintf(stderr, "TTF failed to render text! TFF_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
-  
+  error_check(submit_text_surface == NULL, "TTF failed to render text!");
   SDL_Texture *submit_text_texture = SDL_CreateTextureFromSurface(renderer, submit_text_surface);
-  if (submit_text_surface == NULL) {
-    fprintf(stderr, "failed to create text texture from surface! SDL_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
-
-  SDL_Surface *win_text_surface = TTF_RenderText_Solid(font, "You Win!", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
-  if (win_text_surface == NULL) {
-    fprintf(stderr, "TTF failed to render text! TFF_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
+  error_check(submit_text_texture == NULL, "failed to create text texture from surface!");
   
+  SDL_Surface *win_text_surface = TTF_RenderText_Solid(font, "You Win!", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
+  error_check(win_text_surface == NULL, "TTF failed to render text!");
   SDL_Texture *win_text_texture = SDL_CreateTextureFromSurface(renderer, win_text_surface);
-  if (win_text_texture == NULL) {
-    fprintf(stderr, "failed to create text texture from surface! SDL_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
+  error_check(win_text_texture == NULL, "failed to create text texture from surface!");
 
   SDL_Surface *lose_text_surface = TTF_RenderText_Solid(font, "You Lose!", (SDL_Colour) {SDL_COLOUR(FOREGROUND_COLOUR)});
-  if (lose_text_surface == NULL) {
-    fprintf(stderr, "TTF failed to render text! TFF_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
-  
+  error_check(lose_text_surface == NULL, "TTF failed to render text!");
   SDL_Texture *lose_text_texture = SDL_CreateTextureFromSurface(renderer, lose_text_surface);
-  if (lose_text_texture == NULL) {
-    fprintf(stderr, "failed to create text texture from surface! SDL_Error: %s\n", SDL_GetError());
-    return EXIT_FAILURE;
-  }
+  error_check(lose_text_texture == NULL, "failed to create text texture from surface!");
 
   SDL_Texture *active_text_texture = submit_text_texture;
   int text_x = guess_sets[active_idx].result[1].x + SMALL_CIRCLE_DIAMETER + 4 * PADDING;
@@ -205,13 +177,8 @@ int gui_main(void) {
   bool draw_answer = false;
   while (quit == false) {
     if (redraw) {
-      if (SDL_SetRenderDrawColor(renderer, SDL_COLOUR(BACKGROUND_COLOUR)) < 0) {
-        fprintf(stderr, "Render draw colour error! SDL_Error: %s\n", SDL_GetError());
-      }
-
-      if (SDL_RenderClear(renderer) < 0) {
-        fprintf(stderr, "Render clear error! SDL_Error: %s\n", SDL_GetError());
-      }
+      error_check(SDL_SetRenderDrawColor(renderer, SDL_COLOUR(BACKGROUND_COLOUR)) < 0, "Render draw colour error!");
+      error_check(SDL_RenderClear(renderer) < 0, "Render clear error!");
 
       for (int j = 0; j < MAXIMUM_NUMBER_OF_TRIES; j++) {
         for (int i = 0; i < NUMBER_OF_VALUES_TO_GUESS; i++) {
@@ -234,7 +201,7 @@ int gui_main(void) {
         }
       }
 
-      SDL_RenderCopy(renderer, active_text_texture, NULL, &text_dest);
+      error_check(SDL_RenderCopy(renderer, active_text_texture, NULL, &text_dest) < 0, "Render copy error!");
 
       SDL_RenderPresent(renderer);
       redraw = false;
